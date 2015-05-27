@@ -1,0 +1,26 @@
+{
+  "name": "fgpv-vpgf",
+  "version": "0.0.1-development",
+  "description": "Federal Geospatial Platform Visualiser / Visualisateur pour la Plateforme géospatiale fédérale.",
+  "main": "index.html",
+  "scripts": {
+    "test": "./node_modules/jshint/bin/jshint hello.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fgpv-vpgf/fgpv-vpgf"
+  },
+  "keywords": [
+    "framework",
+    "web",
+    "html5",
+    "javascript",
+    "WCAG2.0",
+    "accessiblity"
+  ],
+  "author": "",
+  "license": "",
+  "devDependencies": {
+    "jshint": "^2.6.0"
+  }
+}
