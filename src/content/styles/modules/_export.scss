@@ -1,4 +1,11 @@
 @mixin export {
+
+    %canvas {
+        width: 100% !important;
+        height: auto !important;
+        display: block;
+    }
+
     .rv-export {
 
         align-self: flex-start; // stick the dialog to the top edge of the viewer container
@@ -37,9 +44,7 @@
             transition: filter $swift-ease-in-duration * 2 $swift-ease-in-out-timing-function;
 
             > canvas {
-                width: 100% !important;
-                height: auto !important;
-                display: block;
+                @extend %canvas;
             }
 
             &.rv-export-complete {
@@ -47,13 +52,15 @@
             }
         }
 
+        .rv-export-map-border {
+            border: 1px solid $divider-color-light;
+        }
+
         .rv-export-dummy {
             display: block;
 
             > canvas {
-                width: 100% !important;
-                height: auto !important;
-                display: block;
+                @extend %canvas;
             }
         }
 
@@ -64,9 +71,29 @@
             top: 0;
 
             > canvas {
-                width: 100% !important;
-                height: auto !important;
-                display: block;
+                @extend %canvas;
+            }
+        }
+
+        .rv-export-scale {
+            display: inline-block;
+            position: absolute;
+        }
+
+        .rv-export-arrow {
+            display: inline-block;
+            position: absolute;
+            margin-top: 5px;
+            margin-left: 40%;
+        }
+
+        .rv-export-footnote {
+            display: inline-block;
+            float: right;
+            width: 50%;
+
+            canvas {
+                @extend %canvas;
             }
         }
 
@@ -74,9 +101,7 @@
             display: block;
 
             canvas {
-                width: 100% !important;
-                height: auto !important;
-                display: block;
+                @extend %canvas;
             }
         }
 
