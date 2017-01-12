@@ -43,6 +43,22 @@
                             td.focus {
                                 outline: 1px solid $focus-color;
                                 outline-offset: -1px;
+
+                                & > .rv-render-tooltip {
+                                    display: block;
+                                    position: absolute;
+                                    border: 1px solid #D3D3D3;
+                                    background-color: #F2F2F2;
+                                    padding: 2px 5px;
+                                    box-shadow: 1px 1px 2px #CCC;
+                                    max-width: 250px;
+                                    white-space: nowrap;
+                                }
+                            }
+
+                            // hide tooltip if td doesn't have the focus
+                            .rv-render-tooltip {
+                                display: none;
                             }
 
                             // ellipsis renderer when text is longer then field width
@@ -55,22 +71,6 @@
                                 cursor: text;
                                 overflow: hidden;
                                 text-overflow: ellipsis;
-                            }
-
-                            .rv-render-tooltip {
-                                display: none;
-                            }
-
-                            // on keyboard focus show tooltip to be wcag compliant
-                            .rv-render-ellipsis:focus + .rv-render-tooltip {
-                                display: block;
-                                position: absolute;
-                                border: 1px solid #D3D3D3;
-                                background-color: #F2F2F2;
-                                padding: 2px 5px;
-                                box-shadow: 1px 1px 2px #CCC;
-                                max-width: 250px;
-                                white-space: normal;
                             }
 
                             .rv-data {

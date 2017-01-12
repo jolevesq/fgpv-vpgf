@@ -43,6 +43,11 @@
         </md-button>`;
     // jscs:enable maximumLineLength
 
+    // use by keytable on focus event to prevent focus from jumping when keyboard scroll
+    let scroll = false;
+    let draw = false;
+    let key = false;
+
     /**
      * @module rvFiltersDefault
      * @memberof app.ui
@@ -219,7 +224,7 @@
                         scroller: {
                             displayBuffer: 3 // we tend to have fat tables which are hard to draw -> use small buffer https://datatables.net/reference/option/scroller.displayBuffer
                         }, // turn on virtual scroller extension
-                        // keys: true, TODO: if enable, we need to set the renderer on the on focus event instead of what we do now. Before we can use this we need to solve a bug with scroller extension.
+                        keys: true,
                         /*select: true,*/ // allow row select,
                         buttons: [
                             // 'excelHtml5',
@@ -248,7 +253,7 @@
                  * @param {Object}  maxLength   optional maximum column length (pixels)
                  * @return {Number} width    width of the column
                  */
-                function getColumnWidth(title, length = 0, maxLength = 200) {
+                function getColumnWidth(title, length = 0, maxLength = 100) {
                     // get title length (minimum 50px)
                     let metricsTitle = getTextWidth(title);
                     metricsTitle = metricsTitle < 50 ? 50 : metricsTitle;
@@ -335,6 +340,51 @@
                         // TODO: these ought to be moved to a helper function in displayManager
                         stateManager.display.filters.isLoading = false;
                         $timeout.cancel(stateManager.display.filters.loadingTimeout);
+
+                        // DOMMouseScroll (FF), mousewheel (Chrome, Safari and IE)
+                        $('.dataTables_scrollBody').on('mousewheel DOMMouseScroll', () => {
+                            // if key is true it means user was using keyboard to navigate datatable so blur the focus
+                            // so datatables doesn't try to put back the focus where it was
+                            // then set user doesn't use keyboard navigation
+                            if (key) { self.table.cell.blur(); }
+                            key = false;
+                        });
+
+                        $timeout(() => { $rootElement.find('[type=\'filters\'] button.rv-close').focus(); }, 1000);
+
+                        self.table.on('key-focus', (e, datatable, cell) => {
+
+                            // there is a side effect when we mix mouse and keyboard. After a mouse scroll when we start to reuse the
+                            // keyboard the scroll jump to show the selected item at the second row.
+                            const info = datatable.scroller.page();
+                            const cellInfo = cell.index();
+
+                            // if there is a button inside the node, focus to it so keyboard user can interact
+                            const node = $(cell.node()).find('button');
+                            if (node.length > 0) { node.first().focus(); }
+
+                            if (!key || !draw) {
+                                // need to scroll where the focus is (if outside the visible items). It is not always done automatically
+                                // keep the cell in memory so when there is a draw, we can put back the focus at the right place
+                                scroll = cell;
+                                if (cellInfo.row < info.start || cellInfo.row >= info.end) {
+                                    self.table.row(cellInfo.row - 1).scrollTo(false); // false because we doesn't want animation
+                                }
+                            } else if (draw) {
+                                // when the rows are drawn, it shift the focus for the active cell. Need to put it back with
+                                // the value in memory
+                                // after the draw, datatable.scroller.page() info are wrong so we can't use them to know if we are
+                                // in the visible area
+                                const focusRow = scroll[0][0].row;
+                                self.table.cell(focusRow, cellInfo.column).focus();
+                                self.table.row(focusRow - 1).scrollTo(false); // false because we doesn't want animation
+                                draw = false;
+                                scroll = false;
+                            }
+
+                            // user is using keyboard navigation
+                            key = true;
+                        });
                     });
                 }
 
@@ -345,6 +395,9 @@
                  */
                 function onTableDraw() {
                     console.log('rows are drawn');
+
+                    // draw has been fired because of scrolling with the keyboard
+                    if (scroll) { draw = true; }
 
                     // find all the button placeholders
                     Object.values(ROW_BUTTONS).forEach(button => {
@@ -494,6 +547,10 @@
                     // clear hilight when table closes or new table is opened
                     // TODO verify this is the proper location for this line
                     geoService.clearHilight();
+
+                    // reinitialize to false when table is destroyed
+                    scroll = false;
+                    draw = false;
                 }
             }
         }
@@ -505,13 +562,14 @@
      * @function Controller
      */
     function Controller($rootScope, $scope, $timeout, $translate, tocService, stateManager, events, filterService,
-        configService) {
+        configService, appInfo) {
         'ngInject';
         const self = this;
 
         self.display = stateManager.display.filters;
 
         self.draw = draw;
+        self.appID = appInfo.id;
 
         const languageObjects = {};
 
