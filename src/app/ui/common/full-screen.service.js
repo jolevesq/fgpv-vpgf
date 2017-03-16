@@ -87,7 +87,7 @@
                     bottom: window.innerHeight - ref.shellNodeBox.bottom,
                     right: document.body.clientWidth - ref.shellNodeBox.right, // width without scrollbars
                     'z-index': FULL_SCREEN_Z_INDEX,
-                    height: 'auto',
+                    height: '1400px',
                     width: 'auto',
                     margin: 0
                 });

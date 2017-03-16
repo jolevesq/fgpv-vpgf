@@ -100,6 +100,17 @@
 
             layoutService.panes.filter = el;
 
+            // TODO test to create a div to put the filter panel inside
+            // $rootScope.$on(events.rvApiReady, () => {
+            //     $('#fgpmap').
+            //         after(`<section class="fgpv rv-medium rv-out-filter"
+            //             style="display:flex; flex-direction:column; min-height:100vh;"><div id="testfilter"></div></section>`);
+            // });
+            //
+            // $rootScope.$on(events.rvTableReady, () => {
+            //     $('#testfilter').append($('rv-panel[type="filters"]'));
+            // });
+
             // columns type with filters information
             const columnTypes = {
                 esriFieldTypeString: {
