@@ -31,6 +31,7 @@
 @import "_side-nav.scss";
 @import "_tooltip.scss";
 @import "_geosearch.scss";
+@import "_lightbox.scss";
 @import "_truncate.scss";
 
 @include core;
@@ -63,3 +64,4 @@
 @include side-nav;
 @include tooltip;
 @include truncate;
+@include lightbox;
