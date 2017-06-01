@@ -69,7 +69,8 @@ angular
  * @return {object} directive body
  */
 function rvFiltersDefault($timeout, $q, stateManager, $compile, geoService, $translate, layoutService,
-    detailService, $rootElement, $filter, keyNames, $sanitize, debounceService, configService, SymbologyStack) {
+    detailService, $rootElement, $filter, keyNames, $sanitize, debounceService, configService, SymbologyStack,
+    filterService, $rootScope, events) {
 
     const directive = {
         restrict: 'E',
@@ -98,6 +99,34 @@ function rvFiltersDefault($timeout, $q, stateManager, $compile, geoService, $tra
 
         layoutService.panes.filter = el;
 
+        // columns type with filters information
+        const columnTypes = {
+            esriFieldTypeString: {
+                init: () => ({ value: '' })
+            },
+            esriFieldTypeDate: {
+                init: () => ({ min: null, max: null })
+            },
+            esriFieldTypeSmallInteger: {
+                init: () => ({ min: '', max: '' })
+            },
+            esriFieldTypeInteger: {
+                init: () => ({ min: '', max: '' })
+            },
+            esriFieldTypeSingle: {
+                init: () => ({ min: '', max: '' })
+            },
+            esriFieldTypeDouble: {
+                init: () => ({ min: '', max: '' })
+            },
+            esriFieldTypeOID: {
+                init: () => ({ min: '', max: '' })
+            },
+            esriFieldTypeGlobalID: {
+                init: () => ({ min: '', max: '' })
+            }
+        };
+
         /**
          * Creates a new datatables instance (destroying existing if any). It pulls the data from the stateManager display store.
          *
@@ -109,7 +138,9 @@ function rvFiltersDefault($timeout, $q, stateManager, $compile, geoService, $tra
                 onTableDraw,
                 onTableInit,
                 onZoomClick,
-                onDetailsClick
+                onDetailsClick,
+                onTableSort,
+                onTableProcess
             };
 
             // TODO: move hardcoded stuff in consts
@@ -129,7 +160,6 @@ function rvFiltersDefault($timeout, $q, stateManager, $compile, geoService, $tra
             containerNode.append(tableNode);
 
             // disabled zoom row button if projection is not valid
-
             // TODO: fix
             // const isZoomEnabled = geoService.validateProj(
             //    geoService.layers[requester.layerId]._layer.spatialReference);
@@ -168,14 +198,13 @@ function rvFiltersDefault($timeout, $q, stateManager, $compile, geoService, $tra
 
             // returns array of column indexes we want in the CSV export
             // are not the symbol or interactive column.
-            const exportColumns = columns => {
+            const exportColumns = columns =>
                 // map columns to their ordinal indexes. but mark the symbol and interactive column as -1.
                 // then filter out the -1. result is an array of column indexes that
                 // are not the symbol and interactive columns.
-                return columns
+                columns
                     .map((column, i) => (column.data === 'rvInteractive' || column.data === 'rvSymbol') ? -1 : i)
                     .filter(idx => idx > -1);
-            };
 
             // returns array of column info where .data field has any period characters escaped
             const escapedColumns = columns => {
@@ -193,27 +222,35 @@ function rvFiltersDefault($timeout, $q, stateManager, $compile, geoService, $tra
             // set width from field length if it is a string field type. If it is the oid field,
             // set width to 100px because we have the oid, the details and zoom to button. If it is
             // another type of field, set width to be the title.
-            displayData.columns.forEach(column => {
+            displayData.columns.forEach((column, index) => {
                 const field = displayData.fields.find(field => field.name === column.data);
 
                 if (typeof field !== 'undefined') {
-                    if (field.type === 'esriFieldTypeString') {
-                        const width = getColumnWidth(column.title, field.length);
-                        column.width = `${width}px`;
-                        column.render = renderEllipsis(width);
-                    } else if (field.type === 'esriFieldTypeOID') {
-                        // set column to be 100px width because of details and zoom to buttons
-                        column.width = '100px';
-                    } else if (field.type === 'esriFieldTypeDate') {
-                        // convert each date cell to a better format
-                        displayData.rows.forEach(r =>
-                            (r[field.name] = $filter('dateTimeZone')(r[field.name])));
-                        const width = Math.max(getTextWidth(column.title), 175);
-                        column.width =  `${width}px`;
-                    } else {
-                        const width = getColumnWidth(column.title);
-                        column.width = `${width}px`;
-                        column.render = renderEllipsis(width);
+                    // set position if not defined
+                    if (column.position === -1) { column.position = index; }
+
+                    // set filter and column initial values if not initialize
+                    if (!column.init) {
+                        column.filter = columnTypes[field.type].init();
+                        column.init = true;
+
+                        if (field.type === 'esriFieldTypeString') {
+                            const width = getColumnWidth(column.title, field.length, 250);
+                            column.width = `${width}px`;
+                            column.render = renderEllipsis(width);
+                        } else if (field.type === 'esriFieldTypeOID') {
+                            // set column to be 100px width because of details and zoom to buttons
+                            column.width = '100px';
+                        } else if (field.type === 'esriFieldTypeDate') {
+                            // convert each date cell to a better format
+                            displayData.rows.forEach(r => { r[field.name] = $filter('dateTimeZone')(r[field.name]) });
+                            const width = getColumnWidth(column.title, 0, 400, 375);
+                            column.width =  `${width}px`;
+                        } else {
+                            const width = getColumnWidth(column.title, 0, 250, 120);
+                            column.width = `${width}px`;
+                            column.render = renderEllipsis(width);
+                        }
                     }
                 }
             });
@@ -222,19 +259,27 @@ function rvFiltersDefault($timeout, $q, stateManager, $compile, geoService, $tra
             self.table = tableNode
                 .on('init.dt', callbacks.onTableInit)
                 .on('draw.dt', callbacks.onTableDraw)
+                .on('order.dt', callbacks.onTableSort)
+                .on('processing.dt', callbacks.onTableProcess)
                 .DataTable({
                     dom: 'rti',
                     columns: escapedColumns(displayData.columns),
                     data: displayData.rows,
                     order: [],
                     deferRender: true,
+                    processing: true, // show processing when filtering takes time
                     scrollY: true, // allow vertical scroller
                     scrollX: true, // allow horizontal scroller
+                    // need to remove autoWidth because we can have autoWidth and fix columns at the same time (if so, columns are note well displayed)
                     autoWidth: false, // without autoWidth, few columns will be stretched to fill availalbe width, and many columns will cause the table to scroll horizontally
                     scroller: {
                         displayBuffer: 10 // we tend to have fat tables which are hard to draw -> use small buffer https://datatables.net/reference/option/scroller.displayBuffer.
                         // see key-focus event to see why we put 10
                     }, // turn on virtual scroller extension
+                    colReorder: {
+                        fixedColumnsLeft: 2, // fix symbol and interactive columns
+                        realtime: false// we need this to know when reorder is done
+                    },
                     /*select: true,*/ // allow row select,
                     buttons: [
                         // 'excelHtml5',
@@ -264,14 +309,15 @@ function rvFiltersDefault($timeout, $q, stateManager, $compile, geoService, $tra
              * @function getColumnWidth
              * @private
              * @param {Object} title    column title
-             * @param {Object} length   optional column length (characters)
-             * @param {Object}  maxLength   optional maximum column length (pixels)
+             * @param {Interger} length   optional column length (characters)
+             * @param {Integer}  maxLength   optional maximum column length (pixels)
+             * @param {Integer}  minLength   optional minimum column length (pixels)
              * @return {Number} width    width of the column
              */
-            function getColumnWidth(title, length = 0, maxLength = 200) {
+            function getColumnWidth(title, length = 0, maxLength = 200, minLength = 50) {
                 // get title length (minimum 50px)
                 let metricsTitle = getTextWidth(title);
-                metricsTitle = metricsTitle < 50 ? 50 : metricsTitle;
+                metricsTitle = metricsTitle < minLength ? minLength : metricsTitle;
 
                 // get column length (only type string have length)
                 if (length) {
@@ -374,6 +420,22 @@ function rvFiltersDefault($timeout, $q, stateManager, $compile, geoService, $tra
                     // at the same time it solve a problem because when focus is on menu button, even if focus is on the
                     // table cell it goes inside the menu and loop through it at the same time as we navigate the table
                     $rootElement.find('[type=\'filters\'] button.rv-close').rvFocus({ delay: 100 });
+
+                    // set colReorder extension
+                    setColumnReorder();
+
+                    // initialize a temporary array to store all the custom filters so they don't fire every time we add new one
+                    $.fn.dataTable.ext.searchTemp = [];
+
+                    // set active table so it can be accessed in filter-search.directive for global table search
+                    filterService.setTable(self.table, displayData.filter.globalSearch);
+
+                    // recalculate scroller space on table init because if the preopen table was maximized in setting view
+                    // the scroller is still in split view
+                    self.table.scroller.measure();
+
+                    // fired event to create filters
+                    $rootScope.$broadcast(events.rvTableReady);
                 });
             }
 
@@ -402,11 +464,35 @@ function rvFiltersDefault($timeout, $q, stateManager, $compile, geoService, $tra
                     });
                 });
 
+                // hide processing display on redraw
+                $rootElement.find('.dataTables_processing').css('display', 'none');
+
                 // set again tabindex because new lines as been added to the dom
                 $rootElement.find('.dataTables_scrollBody td').attr('tabindex', '-3');
 
                 // set keyboard table navigation management
                 setkeytable();
+            }
+
+            /**
+             * Initialize the colReorder extenstion events to reorder stateManager on when columns reorder
+             * @function setColumnReorder
+             * @private
+             */
+            function setColumnReorder() {
+                self.table.on('column-reorder', (e, settings, details) => {
+                    // only reorder columns if modificattion have been made on the table itself
+                    // from the setting panel, we have another to deal with it
+                    if (!filterService.isSettingOpen) {
+                        // reorder columns in statemanager to preserve the order
+                        // remove the moved element then add a it back at the right place
+                        const item = stateManager.display.filters.data.columns.splice(details.from, 1)[0];
+                        stateManager.display.filters.data.columns.splice(details.to, 0, item);
+
+                        // redraw table to put back interactive column (the wrapper gets empty after a column reorder)
+                        self.table.draw();
+                    }
+                });
             }
 
             /**
@@ -462,6 +548,30 @@ function rvFiltersDefault($timeout, $q, stateManager, $compile, geoService, $tra
                     // set index values. It will be use to blur the cell on mouse scroll
                     index = self.table.cell(node).index();
                 });
+            }
+
+            /**
+             * Table sort callback. This will update the sort columns so setting panel and table can be synchronize
+             * @function onTableSort
+             * @private
+             */
+            function onTableSort(e, settings) {
+                // reset sort values
+                stateManager.display.filters.data.columns.forEach(item => { item.sort = 'none'; });
+
+                // update sort column from the last sort, use value from statemanager because interactive column may have been added
+                settings.aLastSort.forEach(item => {
+                    stateManager.display.filters.data.columns[item.col].sort = item.dir;
+                });
+            }
+
+            /**
+             * Table processing callback. This will show processing notice when table process (mainly use when sort)
+             * @function onTableProcess
+             * @private
+             */
+            function onTableProcess(e, settings, processing) {
+                $rootElement.find('#processingIndicator').css('display', processing ? 'block' : 'none');
             }
 
             /**
@@ -594,6 +704,10 @@ function rvFiltersDefault($timeout, $q, stateManager, $compile, geoService, $tra
                 // TODO verify this is the proper location for this line
                 // FIXME: refactor fix needed
                 // geoService.clearHilight();
+
+                // reset index and reference to tablebody for keytable navigation
+                index = undefined;
+                self.tableBody = undefined;
             }
         }
     }
@@ -612,6 +726,8 @@ function Controller($rootScope, $scope, $timeout, $translate, tocService, stateM
     self.display = stateManager.display.filters;
     self.appID = appInfo.id;
     self.draw = draw;
+    self.filterService = filterService;
+
 
     const languageObjects = {};
 

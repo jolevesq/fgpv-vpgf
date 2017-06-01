@@ -287,6 +287,17 @@ function tocService($q, $rootScope, $mdToast, $translate, layoutService, stateMa
                         row.rvInteractive = '';
                     });
 
+                    // add filters attributes needed by every columns
+                    attributes.columns.forEach(columns => {
+                        columns.name = columns.data; // add name so we can get column from datatables (https://datatables.net/reference/type/column-selector)
+                        columns.display = true;
+                        columns.sort = 'none'; // can be none, asc or desc (values use by datatable)
+                        columns.filter = { };
+                        columns.width = '';
+                        columns.init = false;
+                        columns.position = -1; // use to synchronize columns when reorder
+                    });
+
                     // add a column for interactive actions (detail and zoom)
                     // do not add it inside an existing field because filters will not work properly and because of https://github.com/fgpv-vpgf/fgpv-vpgf/issues/1631
                     attributes.columns.unshift({
@@ -294,7 +305,8 @@ function tocService($q, $rootScope, $mdToast, $translate, layoutService, stateMa
                         title: '',
                         orderable: false,
                         render: '',
-                        width: '20px' // for datatables
+                        width: '20px', // for datatables
+                        position: 1 // for datatables
                     });
 
                     // add a column for symbols
@@ -303,9 +315,13 @@ function tocService($q, $rootScope, $mdToast, $translate, layoutService, stateMa
                         title: '',
                         orderable: false,
                         render: data => `<div class="rv-wrapper rv-symbol">${data}</div>`,
-                        width: '20px' // for datatables
+                        width: '20px', // for datatables
+                        position: 0 // for datatables
                     });
                 }
+
+                // add filters informations (use by filters to keep info on table so it persist when we change table)
+                attributes.filter =  { globalSearch: '', isApplied: true, isActive: false };
 
                 return {
                     data: attributes,

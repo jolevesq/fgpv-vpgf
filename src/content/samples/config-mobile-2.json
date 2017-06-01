@@ -312,6 +312,9 @@
             ]
           },
           {
+            "layerId": "DateLayer"
+          },
+          {
             "infoType": "unboundLayer",
             "layerName": "How to catch Santa (//www.pusheen.com/)",
             "symbologyStack": [
@@ -486,6 +489,12 @@
       }
     },
     "layers": [
+        {
+        "id":"DateLayer",
+        "name":"Date layer field",
+        "layerType":"esriFeature",
+        "url":"http://geoappext.nrcan.gc.ca/arcgis/rest/services/NEB/Incident/MapServer/0"
+    },
       {
         "id": "powerplant100mw-25",
         "name": "Power Plants, 25",

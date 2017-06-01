@@ -11,7 +11,7 @@ angular
     .module('app.ui')
     .factory('filterService', filterService);
 
-function filterService(stateManager, geoService, $rootScope, $q, gapiService, debounceService) {
+function filterService(stateManager, geoService, $rootScope, $q, gapiService, debounceService, $rootElement, $timeout) {
 
     // timestamps can be watched for key changes to filter data
     const filterTimeStamps = {
@@ -30,9 +30,29 @@ function filterService(stateManager, geoService, $rootScope, $q, gapiService, de
         setActive,
         filterTimeStamps,
         filter: {
-            isActive: false
-        }
+            isActive: false,
+            isApplied: true
+        },
+        setTable,
+        getTable,
+        clearFilters,
+        applyFilters,
+        toggleSetting,
+        onFilterStringChange: debounceService.registerDebounce(onFilterStringChange, 700, false),
+        onFilterNumberChange: debounceService.registerDebounce(onFilterNumberChange, 700, false),
+        onFilterDateChange: onFilterDateChange,
+        preventSorting: preventSorting,
+        filters: {},
+        isFeatureLayer: false,
+        isDynamicLayer: false,
+        isSettingOpen: false
     };
+
+    // active table for global search to link to
+    let activeTable;
+
+    // array who contains filters (use to show/hide apply on map button)
+    let filtersObject;
 
     init();
 
@@ -47,8 +67,9 @@ function filterService(stateManager, geoService, $rootScope, $q, gapiService, de
     function setActive(value) {
         if (filterTimeStamps.onCreated !== null) { // ignore if no DataTable is active
             service.filter.isActive = value;
-            // TODO: fix
-            // stateManager.display.filters.requester.legendEntry.flags.filter.visible = service.filter.isActive;
+            stateManager.display.filters.data.filter.isActive = value; // set on layer so it can persist when we change layer
+            stateManager.display.filters.requester.legendEntry.flags.filter.visible =
+                service.filter.isActive || service.filter.isApplied;
 
             filteredState().then(() => {
                 filterTimeStamps.onChanged = Date.now();
@@ -63,10 +84,12 @@ function filterService(stateManager, geoService, $rootScope, $q, gapiService, de
      * @private
      */
     function init() {
-        // add a DataTable filter which only accepts rows with oidField values in the validOIDs list
-        $.fn.dataTable.ext.search.push((settings, data) => validOIDs.indexOf(parseInt(data[oidColNum])) !== -1);
-
         $rootScope.$on('extentChange', debounceService.registerDebounce(onExtentChange, 300, false));
+
+        // show filters only when filters are in maximum view
+        $rootScope.$watch(() => stateManager.state.filters.morph, val => {
+            $rootScope.isFiltersVisible = (val === 'full' || service.isSettingOpen) ? true : false;
+        });
 
         // DataTable is either being created or destroyed
         $rootScope.$watch(() => stateManager.display.filters.data, (val, prevVal) => {
@@ -82,6 +105,312 @@ function filterService(stateManager, geoService, $rootScope, $q, gapiService, de
     }
 
     /**
+     * Set active table
+     *
+     * @function setTable
+     * @param   {Object}   table   active table
+     */
+    function setTable(table) {
+        activeTable = table;
+
+        // reset all filters state to false (they will be populated by the loading table)
+        filtersObject = table.columns().dataSrc();
+        filtersObject.each(el => {
+            service.filters[el] = false;
+        });
+
+        // recompute oidColNum for data table filter since it may not be first index
+        oidColNum = stateManager.display.filters.data.columns.findIndex(col =>
+                col.data === stateManager.display.filters.data.oidField);
+
+        // add a DataTable filter which only accepts rows with oidField values in the validOIDs list
+        $.fn.dataTable.ext.searchTemp.push((settings, data) =>
+            validOIDs.indexOf(parseInt(data[settings._colReorder.fnTranspose(oidColNum)])) !== -1);
+    }
+
+    /**
+     * Get active table
+     *
+     * @function getTable
+     * @return   {Object}  activeTable the active table
+     */
+    function getTable() {
+        return activeTable;
+    }
+
+    /**
+     * Clear all filters
+     *
+     * @function clearFilters
+     */
+    function clearFilters() {
+        const filters = stateManager.display.filters;
+
+        // show processing
+        $rootElement.find('.dataTables_processing').css('display', 'block');
+
+        // set isApplied to hide apply filters on map button
+        service.filter.isApplied = true;
+        filters.data.filter.isApplied = service.filter.isApplied;  // set on layer so it can persist when we change layer
+
+        // TODO: fix because we dont use flag anymore... check if we need to show filter flag
+        // filters.requester.legendEntry.flags.filter.visible =
+        //     (service.filter.isActive) ? true : false;
+
+        // reset global search ($watch in filters-search.directive will remove the value)
+        stateManager.display.filters.data.filter.globalSearch = '_reset_';
+
+        // reset all filters state to false
+        filtersObject.each(el => {
+            service.filters[el] = false;
+        });
+
+        // reset all filters value to default
+        filters.data.columns.forEach((column, i) => {
+            // skip first 2 columns because it is the symbol and interactive buttons
+            if (i > 1) {
+                if (column.type === 'string') {
+                    column.filter.value = '';
+                } else if (column.type === 'number') {
+                    column.filter.min = '';
+                    column.filter.max = '';
+                } else if (column.type === 'date') {
+                    column.filter.min = null;
+                    column.filter.max = null;
+                }
+            }
+        });
+
+        // if filter by extent is enable, manually trigger the on extentChange event to refresh the table
+        if (service.filter.isActive) { onExtentChange(); }
+
+        // redraw table to clear filters (use timeout for redraw so processing can show)
+        $timeout(() => { service.getTable().search('').columns().search('').draw(); }, 100);
+
+        // clear definition query
+        const a = gapiService;
+        
+        // TODO: need to be refactor to be inside geo module or geoApi
+        const layer = filters.requester.legendEntry.master ?
+            filters.requester.legendEntry.master._layerRecord._layer :
+            filters.requester.legendEntry._layerRecord._layer;
+        if (service.isFeatureLayer) {
+            // https://developers.arcgis.com/javascript/3/jssamples/map_multiplelayerdef.html
+            layer.setDefinitionExpression('');
+        } else if (service.isDynamicLayer) {
+            // https://developers.arcgis.com/javascript/3/jssamples/fl_layer_definition.html
+            const layerDef = (layer.layerDefinitions !== null) ? layer.layerDefinitions : [];
+            layerDef[filters.requester.legendEntry.featureIdx] = '';
+            layer.setLayerDefinitions(layerDef);
+        }
+    }
+
+    /**
+     * Apply filters on map
+     *
+     * @function applyFilters
+     */
+    function applyFilters() {
+        const filters = stateManager.display.filters;
+
+        // set isApplied to hide apply filters on map button
+        service.filter.isApplied = true;
+        filters.data.filter.isApplied = service.filter.isApplied;  // set on layer so it can persist when we change layer
+
+        // TODO: fix because we dont use flag anymore... show filter flag
+        // filters.requester.legendEntry.flags.filter.visible = true;
+
+        // loop trought all the filters to construct the array queries
+        const defs = [];
+        filters.data.columns.forEach((column, i) => {
+            // skip first 2 columns because it is the symbol and interactive buttons
+            if (i > 1) {
+                if (column.type === 'string') {
+                    // replace ' by '' to be able to perform the search in the datatable
+                    // relpace * wildcard and construct the query (add wildcard at the end)
+                    const val = column.filter.value.replace(/'/g, /''/);
+                    if (val !== '') {
+                        defs.push(`UPPER(${column.name}) LIKE \'${val.replace(/\*/g, '%').toUpperCase()}%\'`);
+                    }
+                } else if (column.type === 'number') {
+                    const min = column.filter.min;
+                    const max = column.filter.max;
+
+                    if (min !== '') {
+                        defs.push(`${column.name} >= ${min}`);
+                    }
+                    if (max !== '') {
+                        defs.push(`${column.name} <= ${max}`);
+                    }
+                } else if (column.type === 'date') {
+                    const min = column.filter.min;
+                    const max = column.filter.max;
+
+                    if (min !== null) {
+                        const dateMin = `${min.getMonth() + 1}/${min.getDate()}/${min.getFullYear()}`;
+                        defs.push(`${column.name} >= DATE \'${dateMin}\'`);
+                    }
+                    if (max !== null) {
+                        const dateMax = `${max.getMonth() + 1}/${max.getDate()}/${max.getFullYear()}`;
+                        defs.push(`${column.name} <= DATE \'${dateMax}\'`);
+                    }
+                }
+            }
+        });
+
+        // stringnify the array
+        const definition = defs.join(' AND ');
+
+        // set definition query
+        // TODO: need to be refactor to be inside geo module or geoApi
+        const layer = filters.requester.legendEntry.master ?
+            filters.requester.legendEntry.master._layerRecord._layer :
+            filters.requester.legendEntry._layerRecord._layer;
+        if (service.isFeatureLayer) {
+            layer.setDefinitionExpression(definition);
+        } else if (service.isDynamicLayer) {
+            const layerDef = (layer.layerDefinitions !== null) ? layer.layerDefinitions : [];
+            layerDef[filters.requester.legendEntry.featureIdx] = definition;
+            layer.setLayerDefinitions(layerDef);
+        }
+    }
+
+    /**
+     * Toggle settings info section
+     *
+     * @function toggleSetting
+     */
+    function toggleSetting() {
+        service.isSettingOpen = !(service.isSettingOpen);
+
+        // show filters if setting is open
+        if (service.isSettingOpen) {
+            $rootScope.isFiltersVisible = true;
+        } else {
+            // when setting is close, check if we need to show setting
+            $rootScope.isFiltersVisible = (stateManager.state.filters.morph === 'full') ? true : false;
+
+            // need to recalculate scroller space because user may have switch from default to full view inside setting panel
+            // need a timeout, if not measure occurs when datatable is not displayed and it fails
+            $timeout(() => { activeTable.scroller.measure(); }, 0);
+        }
+    }
+
+    /**
+     * Apply on string filter change callback
+     *
+     * @function onFilterStringChange
+     * @param   {String}   column   column name
+     * @param   {String}   value   search filter
+     */
+    function onFilterStringChange(column, value) {
+        // show processing
+        $rootElement.find('.dataTables_processing').css('display', 'block');
+
+        // generate regex then filter (use timeout for redraw so processing can show)
+        const val = `^${value.replace(/\*/g, '.*')}.*$`;
+        const table = service.getTable();
+        $timeout(() => { table.column(`${column}:name`).search(val, true, false).draw(); }, 100);
+
+        // keep filter state to know when to show apply map button
+        setFiltersState(column, value);
+
+        // keep filter value to reapply when table reopens
+        const item = stateManager.display.filters.data.columns.find(filter => column === filter.name);
+        item.filter.value = value;
+    }
+
+    /**
+     * Apply on number filter change callback
+     *
+     * @function onFilterNumberChange
+     * @param   {String}   column   column name
+     * @param   {Number}   min   minimum number search filter
+     * @param   {Number}   max   maximum number search filter
+     */
+    function onFilterNumberChange(column, min, max) {
+        // show processing
+        $rootElement.find('.dataTables_processing').css('display', 'block');
+
+        // keep filter state to know when to show apply map button
+        setFiltersState(column, `${min}${max}`);
+
+        // redraw table to filter (filters for range number are added on the table itself in filter-definition.directive)
+        // use timeout for redraw so processing can show
+        $timeout(() => { service.getTable().draw(); }, 100);
+
+        // keep filter value to reapply when table reopens
+        const item = stateManager.display.filters.data.columns.find(filter => column === filter.name);
+        item.filter.min = min;
+        item.filter.max = max;
+    }
+
+    /**
+     * Apply on date filter change callback
+     *
+     * @function onFilterDateChange
+     * @param   {String} column   column name
+     * @param   {Date}   min   minimum date search filter
+     * @param   {Date}   max   maximum date search filter
+     */
+    function onFilterDateChange(column, min, max) {
+        // show processing
+        $rootElement.find('.dataTables_processing').css('display', 'block');
+
+        // keep filter state to know when to show apply map button
+        setFiltersState(column, `${min}${max}`);
+
+        // redraw table to filter (filters for range date are added on the table itself in filter-definition.directive)
+        // use timeout for redraw so processing can show
+        $timeout(() => { service.getTable().draw(); }, 100);
+
+        // keep filter value to reapply when table reopens
+        const item = stateManager.display.filters.data.columns.find(filter => column === filter.name);
+        item.filter.min = min;
+        item.filter.max = max;
+    }
+
+    /**
+     * Set filters state on filters modification to know when show/hide apply on map button
+     *
+     * @function setFilterState
+     * @private
+     * @param   {String}   column   column name
+     * @param   {String}   value   search filter value
+     */
+    function setFiltersState(column, value) {
+        // if there is value, assign to column and show apply map button
+        // if not, it means value is '', loop trought the filters to see if we still need to show apply map button
+        if (value) {
+            service.filters[column] = true;
+            service.filter.isApplied = false;
+        } else {
+            service.filters[column] = false;
+
+            service.filter.isApplied = true;
+            filtersObject.each(el => {
+                // check if another field have a filter. If so, show Apply Map
+                if (service.filters[el]) { service.filter.isApplied = false; }
+            });
+        }
+
+        stateManager.display.filters.data.filter.isApplied = service.filter.isApplied;  // set on layer so it can persist when we change layer
+    }
+
+    /**
+     * Prevent column sort when filter is clicked
+     *
+     * @function preventSorting
+     * @param   {Object} event   event fired when user click or press a key on a filter
+     */
+    function preventSorting(event) {
+        if (event.type === 'click' || (event.type === 'keypress' && event.which === 13)) {
+            event.stopPropagation(true);
+            event.preventDefault(true);
+        }
+    }
+
+    /**
      * Called when filter panel data is being added.
      *
      * @function onCreate
@@ -94,6 +423,21 @@ function filterService(stateManager, geoService, $rootScope, $q, gapiService, de
 
         // TODO: fix
         // service.filter.isActive = stateManager.display.filters.requester.legendEntry.flags.filter.visible;
+
+        // set filter extent and apply map button from table information
+        const filter = stateManager.display.filters.data.filter;
+        service.filter.isActive = filter.isActive;
+        service.filter.isApplied = filter.isApplied;
+
+        // check if we need to show the filters (need this check when table is created)
+        $rootScope.isFiltersVisible = stateManager.state.filters.morph === 'full' ? true : false;
+
+        // set layer type to see if we show apply filter button. Only works on feature layer
+        // not user added layer (FeatureLayer: layer created by value (from a feature collection) does not support definition expressions and time definitions)
+        const layerType = stateManager.display.filters.requester.legendEntry.layerType;
+        const user = stateManager.display.filters.requester.legendEntry.userAdded;
+        service.isFeatureLayer = (layerType === 'esriFeature' && !user) ? true : false;
+        service.isDynamicLayer = (layerType === 'esriDynamicLayerEntry' && !user) ? true : false;
 
         filteredState().then(() => {
             filterTimeStamps.onCreated = Date.now();
@@ -201,9 +545,7 @@ function filterService(stateManager, geoService, $rootScope, $q, gapiService, de
                 // TODO: Using the assumption that oidField values are sorted. If this turns out to be not the case,
                 // see the available ESRI methods orderByFields or start (would need to expose in geoAPI first)
                 const lastOID = featureSet.features[featureSet.features.length - 1].attributes[state.data.oidField];
-                return queryMapserver(lastOID).then(oIDs => {
-                    return validOIDs.concat(oIDs); // merge recursive list with own results
-                });
+                return queryMapserver(lastOID).then(oIDs => validOIDs.concat(oIDs)); // merge recursive list with own results
             } else { // either query did not trigger an exceededTransferLimit exception, or this marks the end of the result set
                 return validOIDs;
             }
@@ -218,6 +560,7 @@ function filterService(stateManager, geoService, $rootScope, $q, gapiService, de
      * @private
      * @param   {Object}  legendEntry    the legendEntry object to derive a url
      * @param   {Number}  featureIdx     the featureIdx to use, defaults to first legendEntry's featureIdx
+     * @return {String} the legend entry url
      */
     function queryURL(legendEntry, featureIdx = legendEntry.featureIdx) {
         return legendEntry.url ? legendEntry.url + '/' + featureIdx : queryURL(legendEntry.parent, featureIdx);
