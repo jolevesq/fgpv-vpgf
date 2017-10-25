@@ -318,6 +318,9 @@
       "root": {
         "name": "root",
         "children": [
+            {
+              "layerId": "Hugelayer"
+            },
           {
             "layerId": "crops"
           },
@@ -350,6 +353,17 @@
       }
     },
     "layers": [
+        {
+          "id": "Hugelayer",
+          "name": "Huge",
+          "layerType": "esriDynamic",
+          "layerEntries": [{"index": 0}],
+          "state": {
+            "visibility": false,
+            "boundingBox": false
+          },
+          "url": "http://www.agr.gc.ca/atlas/rest/services/mapservices/aafc_plant_hardiness_zones/MapServer/"
+        },
       {
         "id": "powerplant100mw-electric",
         "name": "Electric Transmission Line",

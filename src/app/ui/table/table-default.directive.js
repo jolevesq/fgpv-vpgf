@@ -599,7 +599,8 @@ function rvTableDefault($timeout, $q, stateManager, $compile, geoService, $trans
             function onTableInit() {
                 // turn off loading indicator after the table initialized or the forced delay whichever takes longer; cancel loading timeout as well
                 forcedDelay.then(() => {
-                    if (self.tableBody) {
+
+                    if (self.tableBody !== 'no') {
                         // TODO: these ought to be moved to a helper function in displayManager
                         stateManager.display.table.isLoading = false;
                         $timeout.cancel(stateManager.display.table.loadingTimeout);
@@ -646,7 +647,7 @@ function rvTableDefault($timeout, $q, stateManager, $compile, geoService, $trans
                         });
 
                         // fired event to create filters
-                        events.$broadcast(events.rvTableReady);
+                        // events.$broadcast(events.rvTableReady);
 
                         // handle when screen is resized and column headings need to be readjusted
                         self.onResizeDelistener = layoutService.onResize(
