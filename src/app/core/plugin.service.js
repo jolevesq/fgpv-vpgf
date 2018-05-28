@@ -8,13 +8,17 @@
  */
 angular
     .module('app.core')
-    .factory('pluginService', pluginService);
+    .factory('pluginService', pluginService)
+    .directive('rvSideNavPlugin', rvSideNavPlugin);
+
+//let dirOptions;
 
 function pluginService(translationService, $mdDialog, referenceService) {
     const service = {
         onCreate,
         register,
-        openDialogInfo
+        openDialogInfo,
+        sideMenuDirective
     };
 
     const pluginList = []; // an array of registered plugin instances
@@ -128,5 +132,44 @@ function pluginService(translationService, $mdDialog, referenceService) {
         for (let [key, val] of Object.entries(items)) {
             self[key] = val;
         }
+    }
+}
+
+function sideMenuDirective(options) {
+    dirOptions = options
+}
+
+function rvSideNavPlugin() {
+    const directive = {
+        restrict: 'E',
+        template: `<md-sidenav rv-basemap class="rv-basemap-selector md-sidenav-left md-whiteframe-z2" md-component-id="plug">
+                <header class="rv-basemap-header">
+                        <h3 class="ng-binding md-headline">{{ 'nav.label.basemap' | translate }}</h3>
+                        <md-button class="md-icon-button black rv-button-24 rv-minimize-button md-button md-ink-ripple" ng-click="self.close()" aria-label="{{ 'contentPane.aria.close' | translate }}">
+                            <md-icon md-svg-src="community:chevron-double-left"></md-icon>
+                        </md-button>
+                    </header>
+
+                    </md-sidenav>`,
+        controller: sideNavPluginController,
+        controllerAs: 'self',
+        bindToController: true,
+        link: function (scope, element, attr) {
+            console.log('inside');
+        }
+    };
+    return directive;
+}
+
+function sideNavPluginController($mdSidenav) {
+    'ngInject';
+    const self = this;
+
+    self.close = close;
+
+    //self.stuff = (typeof dirOptions !== 'undefined') ?  dirOptions.stuff :  '<span>Firsts</span>';
+
+    function close() {
+        return $mdSidenav('plug').close();
     }
 }

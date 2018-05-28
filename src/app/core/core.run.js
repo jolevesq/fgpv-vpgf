@@ -170,7 +170,9 @@ function apiBlock($rootScope, globalRegistry, geoService, configService, events,
         setMapCursor,
         projectGeometry,
         toggleSideNav: val => { $mdSidenav('left')[val](); },
+        toggleRightSideNav: val => { $mdSidenav('plug')[val](); },
         openDialogInfo: options => pluginService.openDialogInfo(options),
+        sideMenuDirective: options => pluginService.sideMenuDirective(options),
         reInitialize: bookmark => reloadService.reloadConfig(bookmark),
         getConfig
     };

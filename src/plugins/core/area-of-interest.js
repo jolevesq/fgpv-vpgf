@@ -27,6 +27,8 @@
             return () => {
                 this.api.toggleSideNav('close');
 
+                this.api.toggleRightSideNav('open');
+
                 // creates bookmark links
                 let zoneList = '';
                 for (let zone of zones) {
@@ -67,6 +69,8 @@
                     addStyle = true;
                 }
 
+                this.api.toggleRightSideNav('open');
+                //this.api.sideMenuDirective({ stuff: '<span>TEST</span>' });
                 // open info
                 dialogWindow = self.openDialogInfo({ items, template });
             };
