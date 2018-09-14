@@ -1,0 +1,20 @@
+Setup json-server and hotel to run a rest service/api with https in seconds.
+
+I am providing steps for windows, and steps on unix based OS should be the same, except variable representation ($ instead of % etc.).
+
+1. Setup json-server, as provided on the site. Do not start. (Ref: https://github.com/typicode/json-server)
+    a. Create directory "c:\json-server" or any name.
+    b. Create db.json.
+    c. Create static html file.
+    c. References (very good article): https://medium.com/codingthesmartway-com-blog/create-a-rest-api-with-json-server-36da8680136d
+    d. References (download npm/nodesjs): https://nodejs.org/en/download/
+2. Setup hotel, as provided on the site and start hotel. (Ref: https://github.com/typicode/hotel)
+3. Setup localdomain as ".localhost". I setup on firefox with browser method and worked fine with steps provided. (Ref: https://github.com/typicode/hotel)
+4. Now add json-server to hotel. This is where it was slightly tricky and wasn't clear at first.
+   a. Go to directory, where you have created json.db file. e.g. cd c:\json-server
+   b. Now execute the following command: hotel add "json-server db.json -p %PORT%"
+   The tricky part is the %PORT%. Your app needs to listen on %PORT% so hotel can dynamically assign it a port.
+4. Now go to hotel https://hotel.localhost and start the app.
+   a. App will be named "json-server" by default. Once it starts you will see the port it assigns by default in the logs.
+5. Now you can visit https enabled site "https://json-server.localhost/"
+   a. Add exception when the browser suggests an invalid certificate because of the certificate being self-signed.

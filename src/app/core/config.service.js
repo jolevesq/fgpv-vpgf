@@ -145,9 +145,11 @@ function configService($q, $rootElement, $http, $translate, events, gapiService,
                 rcsLang = 'en';
             }
 
-            return $http.get(`${endpoint}v2/docs/${rcsLang}/${this._rcsKeys.join(',')}`).then(
+            return $http.get(`${endpoint}layers/${this._rcsKeys.join(',')}`).then(
                 resp => {
                     const result = [];
+
+                    resp.data = [{"layers": [resp.data]}];
 
                     // there is an array of layer configs in resp.data.
                     // moosh them into one single layer array on the result
@@ -348,7 +350,7 @@ function configService($q, $rootElement, $http, $translate, events, gapiService,
         }
 
         // TODO: consider alternate to appending '-CA' if language code has a length of two. 'es' should be 'es-ES' but now
-        // would be 'es-CA'. Work around is to set lang to 'es-ES' so we don't append anything to the end. 
+        // would be 'es-CA'. Work around is to set lang to 'es-ES' so we don't append anything to the end.
         languages = $rootElement.attr('rv-langs') ? angular.fromJson($rootElement.attr('rv-langs')) : [document.documentElement.lang]
             .map(l => l.length === 2 ? l + '-CA' : l)
             .filter(l => l);
