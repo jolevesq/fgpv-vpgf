@@ -78,6 +78,7 @@
         <% } %>
     <% } %>
 
+    <script src="./extensions/chyf.js"></script>
     <script>
         // https://css-tricks.com/snippets/javascript/get-url-variables/
         function getQueryVariable(variable)
