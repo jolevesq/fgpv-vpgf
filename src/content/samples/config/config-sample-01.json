@@ -135,6 +135,13 @@
         "name": "Natural Gas Pipeline",
         "layerType": "esriFeature",
         "metadataUrl": "http://maps-cartes.ec.gc.ca/LWBSF-FIBLW/LWBSF_en.xml?_=1490727645184",
+        "controls": [
+          "opacity",
+          "settings"
+        ],
+        "disabledControls": [
+          "remove"
+        ],
         "state": {
           "visibility": false,
           "boundingBox": false
