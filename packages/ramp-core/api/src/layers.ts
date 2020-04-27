@@ -10,6 +10,7 @@ export const layerTypes = {
     ESRI_FEATURE: 'esriFeature',
     ESRI_IMAGE: 'esriImage',
     ESRI_TILE: 'esriTile',
+    OGC_WCS: 'ogcWcs',
     OGC_WMS: 'ogcWms'
 };
 

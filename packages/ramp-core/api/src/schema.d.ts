@@ -44,11 +44,13 @@ export type LegendEntryControls = (
   | "settings"
   | "data"
   | "styles"
+  | "coverages"
 )[];
 export type LayerNode =
   | BasicLayerNode
   | FeatureLayerNode
   | FileLayerNode
+  | WcsLayerNode
   | WfsLayerNode
   | WmsLayerNode
   | DynamicLayerNode;
@@ -711,6 +713,7 @@ export interface TileSchemaNode {
       | "settings"
       | "data"
       | "styles"
+      | "coverages"
     )[];
     state?: InitialLayerSettings;
     details?: {
@@ -882,6 +885,7 @@ export interface BasicLayerNode {
     | "settings"
     | "data"
     | "styles"
+    | "coverages"
   )[];
   state?: InitialLayerSettings;
   details?: {
@@ -960,6 +964,7 @@ export interface FeatureLayerNode {
     | "settings"
     | "data"
     | "styles"
+    | "coverages"
   )[];
   state?: InitialLayerSettings;
   /**
@@ -1154,6 +1159,7 @@ export interface FileLayerNode {
     | "settings"
     | "data"
     | "styles"
+    | "coverages"
   )[];
   state?: InitialLayerSettings;
   /**
@@ -1225,6 +1231,81 @@ export interface FileLayerNode {
    */
   fieldMetadata?: FieldMetadataEntry[];
 }
+export interface WcsLayerNode {
+  /**
+   * The id of the layer for referencing within the viewer (does not relate directly to any external service)
+   */
+  id: string;
+  /**
+   * The display name of the layer.  If it is not present the viewer will make an attempt to scrape this information.
+   */
+  name?: string;
+  /**
+   * The service endpoint of the layer.  It should match the type provided in layerType.
+   */
+  url: string;
+   /**
+   * The service version for the request
+   */
+  version?: string;
+   /**
+    * WCS GetCoverage uses the onlineResource url (in capabilities response) instead of wcsUrl.  So we need addition parameter to set this up.
+    */
+  corsUrl?: string[];
+   /**
+    * Array of RGB color to apply for each band
+    */
+  colorMap: [number[]];
+  /**
+    * Array of bands name to select
+    */
+   coverages: string[];
+  /**
+   * The metadata url of the layer service
+   */
+  metadataUrl?: string;
+  /**
+   * The catalogue url of the layer service
+   */
+  catalogueUrl?: string;
+  /**
+   * Prevents a getCapabilities request, instead relying on info provided in layerEntries
+   */
+  suppressGetCapabilities?: boolean;
+  layerType: "ogcWcs";
+  extent?: ExtentWithReferenceNode;
+  controls?: LegendEntryControls;
+  /**
+   * A list of controls which are visible, but disabled for user modification
+   */
+  disabledControls?: (
+    | "opacity"
+    | "visibility"
+    | "boundingBox"
+    | "query"
+    | "snapshot"
+    | "metadata"
+    | "boundaryZoom"
+    | "refresh"
+    | "reload"
+    | "remove"
+    | "settings"
+    | "data"
+    | "styles"
+    | "coverages"
+  )[];
+  state?: InitialLayerSettings;
+  details?: {
+    /**
+     * A path to a javascript file with a function for parsing the layers identify output. Only needed if a custom template is being used.
+     */
+    parser?: string;
+    /**
+     * A path to an html template that will override default identify output. The template can contain angular bindings, directives, etc.
+     */
+    template: string;
+  };
+}
 export interface WfsLayerNode {
   /**
    * The id of the layer for referencing within the viewer (does not relate directly to any external service)
@@ -1274,6 +1355,7 @@ export interface WfsLayerNode {
     | "settings"
     | "data"
     | "styles"
+    | "coverages"
   )[];
   state?: InitialLayerSettings;
   /**
@@ -1411,6 +1493,7 @@ export interface WmsLayerNode {
     | "settings"
     | "data"
     | "styles"
+    | "coverages"
   )[];
   state?: InitialLayerSettings;
   details?: {
@@ -1506,6 +1589,7 @@ export interface DynamicLayerNode {
     | "settings"
     | "data"
     | "styles"
+    | "coverages"
   )[];
   state?: InitialLayerSettings;
   /**

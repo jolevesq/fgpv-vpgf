@@ -96,6 +96,40 @@ function ConfigObjectFactory(Geo, gapiService, common, events, $rootScope) {
                 disabledControls: [],
                 userDisabledControls: []
             },
+            [Geo.Layer.Types.OGC_WCS]: {
+                state: {
+                    opacity: 1,
+                    visibility: true,
+                    boundingBox: false,
+                    query: true,
+                    snapshot: false,
+                    userAdded: false
+                },
+                controls: [
+                    'opacity',
+                    'visibility',
+                    'boundingBox',
+                    'query',
+                    'metadata',
+                    'boundaryZoom',
+                    'refresh',
+                    'reload',
+                    'remove',
+                    'settings',
+                    'symbology',
+                    'styles',
+                    'interval',
+                    'coverages'
+                ],
+                disabledControls: [],
+                userDisabledControls: [],
+                child: {
+                    state: {},
+                    controls: [],
+                    disabledControls: [],
+                    userDisabledControls: []
+                }
+            },
             [Geo.Layer.Types.OGC_WMS]: {
                 state: {
                     opacity: 1,
@@ -881,6 +915,36 @@ function ConfigObjectFactory(Geo, gapiService, common, events, $rootScope) {
                 controls: this.controls,
                 disabledControls: this.disabledControls
             }
+        }
+    }
+
+    class WCSLayerNode extends LayerNode {
+        constructor (source) {
+            super(source);
+
+            this._version = source.version;
+            this._corsUrl = source.corsUrl;
+            this._colorMap = source.colorMap;
+            this._coverages = source.coverages;
+            this._currentCoverage = -1;
+        }
+
+        get version () { return this._version; }
+        get corsUrl () { return this._corsUrl; }
+        get colorMap () { return this._colorMap; }
+        get coverages () { return this._coverages; }
+
+        get currentCoverage () { return this._currentCoverage; }
+        set currentCoverage (value) { this._currentCoverage = value; }
+
+        get JSON() {
+            return angular.merge(super.JSON, {
+                vesrion: this.version,
+                corsUrl: this.corsUrl,
+                colorMap: this.colorMap,
+                coverages: this.coverages,
+                currentCoverage: this.currentCoverage
+            });
         }
     }
 
@@ -2842,6 +2906,7 @@ function ConfigObjectFactory(Geo, gapiService, common, events, $rootScope) {
             BasicLayerNode,
             FeatureLayerNode,
             DynamicLayerNode,
+            WCSLayerNode,
             WMSLayerNode,
             WFSLayerNode,
             FileLayerNode,

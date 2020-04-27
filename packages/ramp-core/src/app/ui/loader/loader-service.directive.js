@@ -30,6 +30,7 @@ function Controller($q, $timeout, stateManager, Geo, Stepper, $rootElement, keyN
 
     self.closeLoaderService = closeLoaderService;
     self.isWMSLayerWithMultipleStyles = isWMSLayerWithMultipleStyles;
+    self.isWCSLayerWithMultipleCoverages = isWCSLayerWithMultipleCoverages;
     self.isHTTPS = location.protocol === 'https:';
 
     self.serviceTypes = [
@@ -374,7 +375,21 @@ function Controller($q, $timeout, stateManager, Geo, Stepper, $rootElement, keyN
         return (
             self.layerBlueprint &&
             self.layerBlueprint.config.layerType === Geo.Layer.Types.OGC_WMS &&
-            self.layerBlueprint.config.layerEntries.some(entry => entry.allStyles.length > 1)
+            (self.block.proxyWrapper.layerConfig.coverages && self.block.proxyWrapper.layerConfig.coverages.length > 1)
+        );
+    }
+
+    /**
+     * Checks if any of the selected wcs layers have more than one coverages
+     *
+     * @function isWCSLayerWithMultipleCoverages
+     * @return {Boolean} true if at least one with multiple styles
+     */
+    function isWCSLayerWithMultipleCoverages() {
+        return (
+            self.layerBlueprint &&
+            self.layerBlueprint.config.layerType === Geo.Layer.Types.OGC_WCS &&
+            self.layerBlueprint.config.some(entry => entry.coverages.length > 1)
         );
     }
 

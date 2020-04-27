@@ -13,6 +13,8 @@ function getLayerTypeBuilder(esriBundle) {
             return 'FeatureLayer';
         } else if (layer instanceof esriBundle.WmsLayer) {
             return 'WmsLayer';
+        } else if (layer instanceof esriBundle.WcsLayer) {
+            return 'WcsLayer';
         } else if (layer instanceof esriBundle.ArcGISDynamicMapServiceLayer) {
             return 'ArcGISDynamicMapServiceLayer';
         } else if (layer instanceof esriBundle.ArcGISTiledMapServiceLayer) {

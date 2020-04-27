@@ -260,8 +260,8 @@ class LayerRecord extends root.Root {
         }
 
         if (!this.extent) {
-            // no extent from config. attempt layer extent
-            this.extent = this._layer.fullExtent;
+            // no extent from config. attempt layer extent (WCS has no full extent so use extent)
+            this.extent = (typeof this._layer.fullExtent !== 'undefined') ? this._layer.fullExtent : this._layer.extent;
         }
 
         this.extent = shared.makeSafeExtent(this.extent);
@@ -572,7 +572,7 @@ class LayerRecord extends root.Root {
      * @returns {Object} the proxy interface for the layer
      */
     getProxy () {
-        // NOTE baseclass used by things like WMSRecord, ImageRecord, TileRecord
+        // NOTE baseclass used by things like WMSRecord, WCSRecord, ImageRecord, TileRecord
         if (!this._rootProxy) {
             this._rootProxy = new layerInterface.LayerInterface(this);
             this._rootProxy.convertToSingleLayer(this);

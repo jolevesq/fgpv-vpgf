@@ -9,6 +9,7 @@ const featureRecord = require('./featureRecord.js')();
 const graphicsRecord = require('./graphicsRecord.js')();
 const imageRecord = require('./imageRecord.js')();
 const tileRecord = require('./tileRecord.js')();
+const wcsRecord = require('./wcsRecord.js')();
 const wmsRecord = require('./wmsRecord.js')();
 
 /*
@@ -67,5 +68,6 @@ module.exports = () => ({
     GraphicsRecord: graphicsRecord.GraphicsRecord,
     ImageRecord: imageRecord.ImageRecord,
     TileRecord: tileRecord.TileRecord,
+    WcsRecord: wcsRecord.WcsRecord,
     WmsRecord: wmsRecord.WmsRecord
 });

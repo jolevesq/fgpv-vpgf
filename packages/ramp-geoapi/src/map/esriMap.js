@@ -113,6 +113,7 @@ function esriMap(esriBundle, geoApi) {
 
         checkCorsException(url) {
             if (corsEverywhere) {
+                // NOTE: because WCS needs the port for their cors server, remove : from the last group ([^:\/\n]+)
                 const hostRegex = /^(?:https?:\/\/)?(?:[^@\/\n]+@)?([^:\/\n]+)/i;
                 const match = hostRegex.exec(url);
                 if (match !== null) {
@@ -120,6 +121,26 @@ function esriMap(esriBundle, geoApi) {
                     if (esriBundle.esriConfig.defaults.io.corsEnabledServers.indexOf(hostname) < 0) {
                         console.debug('layer added cors ', hostname);
                         esriBundle.esriConfig.defaults.io.corsEnabledServers.push(hostname);
+
+                    }
+                }
+            }
+        }
+
+        // Note: WCS GetCoverage uses the onlineResource url (in capabilities response) instead of wcsUrl. We need to specofy the cors with another parameter
+        checkCorsExceptionWcs(urls) {
+            if (corsEverywhere) {
+                // NOTE: because WCS needs the port for their cors server, remove : from the last group ([^:\/\n]+)
+                const hostRegex = /^(?:https?:\/\/)?(?:[^@\/\n]+@)?([^\/\n]+)/i;
+
+                for (let url of urls) {
+                    let match = hostRegex.exec(url);
+                    if (match !== null) {
+                        let hostname = match[1];
+                        if (esriBundle.esriConfig.defaults.io.corsEnabledServers.indexOf(hostname) < 0) {
+                            console.debug('layer added cors ', hostname);
+                            esriBundle.esriConfig.defaults.io.corsEnabledServers.push(hostname);
+                        }
                     }
                 }
             }

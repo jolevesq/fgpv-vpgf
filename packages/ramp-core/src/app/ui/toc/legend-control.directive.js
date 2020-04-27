@@ -7,6 +7,7 @@ const templateUrl = {
     switch: require('./templates/legend-control-switch.html'),
     input: require('./templates/legend-control-input.html'),
     select: require('./templates/legend-control-select.html'),
+    wcs: require('./templates/legend-control-wcs.html'),
     'toggle-button': require('./templates/legend-control-toggle-button.html')
 };
 

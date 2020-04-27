@@ -278,7 +278,10 @@ function LayerBlueprint($http: any, $q: any, Geo: any, gapiService: any, ConfigO
             // FIXME sometimes there is no map instance ready at this point (usually during initial language change). figure out if our timing is wrong
             if (this.config.url && configService.getSync.map.instance) {
                 // if ESRI JSAPI fixes it's CORS bug this can be removed
-                configService.getSync.map.instance.checkCorsException(this.config.url);
+                // NOTE: because WCS GetCoverage uses the onlineResource url (in capabilities response) instead of wcsUrl we need a special parameter for cors url.
+                (this.config.layerType !== 'ogcWcs') ?
+                    configService.getSync.map.instance.checkCorsException(this.config.url) :
+                    configService.getSync.map.instance.checkCorsExceptionWcs(this.config.corsUrl);
             }
 
             this.backup();
@@ -467,6 +470,28 @@ function LayerBlueprint($http: any, $q: any, Geo: any, gapiService: any, ConfigO
 
         get type() {
             return Geo.Service.Types.WMS;
+        }
+    }
+
+    /**
+     * WCS layer blueprint.
+     *
+     * @class ImageServiceSource
+     * @extends {mixins(BlueprintBase, ServerSideData)}
+     */
+    class WCSServiceSource extends mixins(BlueprintBase, ServerSideData) {
+        constructor(rawConfig: any) {
+            super();
+
+            this._setConfig(rawConfig, ConfigObject.layers.WCSLayerNode);
+        }
+
+        get layerRecordFactory(): LayerRecordFactory {
+            return gapiService.gapi.layer.createWcsRecord;
+        }
+
+        get type() {
+            return Geo.Service.Types.WCS;
         }
     }
 
@@ -885,6 +910,7 @@ function LayerBlueprint($http: any, $q: any, Geo: any, gapiService: any, ConfigO
             [Geo.Layer.Types.ESRI_DYNAMIC]: DynamicServiceSource,
             [Geo.Layer.Types.ESRI_IMAGE]: ImageServiceSource,
             [Geo.Layer.Types.ESRI_TILE]: TileServiceSource,
+            [Geo.Layer.Types.OGC_WCS]: WCSServiceSource,
             [Geo.Layer.Types.OGC_WMS]: WMSServiceSource,
             [Geo.Layer.Types.OGC_WFS]: WFSServiceSource,
             [Geo.Layer.Types.ESRI_FEATURE]: FeatureServiceSource,
@@ -904,6 +930,7 @@ function LayerBlueprint($http: any, $q: any, Geo: any, gapiService: any, ConfigO
     const service = {
         FeatureServiceSource,
         DynamicServiceSource,
+        WCSServiceSource,
         WMSServiceSource,
         WFSServiceSource,
         ImageServiceSource,

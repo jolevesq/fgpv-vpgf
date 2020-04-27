@@ -43,6 +43,7 @@ const serviceType = {
     FeatureService: 'featureservice',
     DynamicService: 'dynamicservice',
     ImageService: 'imageservice',
+    WCS: 'wcs',
     WMS: 'wms',
     WFS: 'wfs',
     Unknown: 'unknown',
@@ -1273,6 +1274,19 @@ function createTileRecordBuilder(esriBundle, geoApi, classBundle) {
     };
 }
 
+function createWcsRecordBuilder(esriBundle, geoApi, classBundle) {
+    /**
+    * Creates an WCS Layer Record class
+    * @param {Object} config         layer config values
+    * @param {Object} esriLayer      an optional pre-constructed layer
+    * @param {Function} epsgLookup   an optional lookup function for EPSG codes (see geoService for signature)
+    * @returns {Object}              instantited WcsRecord class
+    */
+    return (config, esriLayer, epsgLookup) => {
+        return new classBundle.WcsRecord(esriBundle.WcsLayer, geoApi, config, esriLayer, epsgLookup);
+    };
+}
+
 function createWmsRecordBuilder(esriBundle, geoApi, classBundle) {
     /**
     * Creates an WMS Layer Record class
@@ -1319,6 +1333,7 @@ module.exports = function (esriBundle, geoApi) {
         ogc: ogc(esriBundle),
         bbox: bbox(esriBundle, geoApi),
         createImageRecord: createImageRecordBuilder(esriBundle, geoApi, layerClassBundle),
+        createWcsRecord: createWcsRecordBuilder(esriBundle, geoApi, layerClassBundle),
         createWmsRecord: createWmsRecordBuilder(esriBundle, geoApi, layerClassBundle),
         createWfsRecord: createFeatureRecordBuilder(esriBundle, geoApi, layerClassBundle),
         createTileRecord: createTileRecordBuilder(esriBundle, geoApi, layerClassBundle),

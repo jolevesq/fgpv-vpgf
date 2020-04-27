@@ -97,6 +97,9 @@ module.exports = function (esriLoaderUrl, window) {
         ['esri/layers/GraphicsLayer', 'GraphicsLayer'],
         ['esri/layers/ImageParameters', 'ImageParameters'],
         ['esri/layers/LayerDrawingOptions', 'LayerDrawingOptions'],
+        ['esri/layers/WCSLayer', 'WcsLayer'],
+        ['esri/layers/WCSConnection', 'WcsConnection'],
+        ['esri/layers/WCSCoverageDescription', 'wcsCoverageDescription'],
         ['esri/layers/WMSLayer', 'WmsLayer'],
         ['esri/layers/WMSLayerInfo', 'WMSLayerInfo'],
         ['esri/map', 'Map'],
@@ -118,7 +121,8 @@ module.exports = function (esriLoaderUrl, window) {
         ['esri/tasks/QueryTask', 'QueryTask'],
         ['esri/tasks/PrintParameters', 'PrintParameters'],
         ['esri/tasks/PrintTask', 'PrintTask'],
-        ['esri/tasks/PrintTemplate', 'PrintTemplate']
+        ['esri/tasks/PrintTemplate', 'PrintTemplate'],
+        ['esri/TimeExtent', 'TimeExtent']
     ];
 
     // the startup for this module is:

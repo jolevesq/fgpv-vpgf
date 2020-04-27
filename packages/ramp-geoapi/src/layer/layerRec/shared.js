@@ -19,6 +19,7 @@ const clientLayerType = {
     ESRI_TILE: 'esriTile',
     ESRI_GROUP: 'esriGroup',
     ESRI_RASTER: 'esriRaster',
+    OGC_WCS: 'ogcWcs',
     OGC_WMS: 'ogcWms',
     OGC_WFS: 'ogcWfs',
     UNRESOLVED: 'unresolved',

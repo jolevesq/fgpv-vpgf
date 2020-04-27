@@ -58,6 +58,19 @@
     </div>
 </div>
 
+<div class="rv-subsection" ng-if="::(self.checkWCS() && !self.checkDisabledControls('coverages') && self.checkCoveragesLength())">
+    <div class="rv-subheader">
+        <h4 translate class="md-subhead">settings.label.styles</h4>
+    </div>
+    <div class="rv-subcontent">
+
+        <md-divider class="rv-settings-divider"></md-divider>
+        <rv-legend-control block="self.block" template="wcs" name="coverages"></rv-legend-control>
+        <md-divider class="rv-settings-divider"></md-divider>
+
+    </div>
+</div>
+
 <div class="rv-subsection">
     <div class="rv-subcontent">
         <!--span translate>settings.reload.description</span-->

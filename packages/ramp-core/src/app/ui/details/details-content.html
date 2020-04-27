@@ -19,6 +19,12 @@
             map-point="self.mapPoint"
             item="self.item"></rv-details-record-text>
 
+        <!-- Plain text presentation  -->
+        <rv-details-record-text
+            ng-switch-when="ogcWcs"
+            map-point="self.mapPoint"
+            item="self.item"></rv-details-record-text>
+
         <!-- Raw HTML presentation  -->
         <rv-details-record-html
             ng-switch-when="ogcWms"

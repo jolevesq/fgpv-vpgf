@@ -393,7 +393,8 @@
                     "remove",
                     "settings",
                     "data",
-                    "styles"
+                    "styles",
+                    "coverages"
                 ]
             },
             "uniqueItems": true,
@@ -1251,6 +1252,105 @@
             "required": ["id", "layerType", "fileType", "url"],
             "additionalProperties": false
         },
+        "wcsLayerNode": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "The id of the layer for referencing within the viewer (does not relate directly to any external service)"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "The display name of the layer.  If it is not present the viewer will make an attempt to scrape this information."
+                },
+                "url": {
+                    "type": "string",
+                    "description": "The service endpoint of the layer.  It should match the type provided in layerType."
+                },
+                "version": {
+                    "type": "string",
+                    "description": "The service version to use for resquest."
+                },
+                "corsUrl": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "WCS GetCoverage uses the onlineResource url (in capabilities response) instead of wcsUrl.  So we need addition parameter to set this up."
+                },
+                "colorMap": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "number"
+                        }
+                    },
+                    "description": "Array of RGB color to apply for each band."
+                },
+                "coverages": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Bands to select inside the coverages"
+                },
+                "metadataUrl": {
+                    "type": "string",
+                    "default": null,
+                    "description": "The metadata url of the layer service"
+                },
+                "catalogueUrl": {
+                    "type": "string",
+                    "default": null,
+                    "description": "The catalogue url of the layer service"
+                },
+                "suppressGetCapabilities": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Prevents a getCapabilities request, instead relying on info provided in layerEntries"
+                },
+                "layerType": {
+                    "type": "string",
+                    "enum": ["ogcWcs"]
+                },
+                "extent": {
+                    "$ref": "#/definitions/extentWithReferenceNode"
+                },
+                "controls": {
+                    "$ref": "#/definitions/legendEntryControls"
+                },
+                "disabledControls": {
+                    "$ref": "#/definitions/legendEntryControls",
+                    "description": "A list of controls which are visible, but disabled for user modification"
+                },
+                "enableStructuredDelete": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Allows Remove menu control on any layer in a structured legend. Caution: may allow users to delete layers and break legend"
+                },
+                "state": {
+                    "$ref": "#/definitions/initialLayerSettings"
+                },
+                "details": {
+                    "type": "object",
+                    "properties": {
+                        "parser": {
+                            "type": "string",
+                            "description": "A path to a javascript file with a function for parsing the layers identify output. Only needed if a custom template is being used."
+                        },
+                        "template": {
+                            "type": "string",
+                            "description": "A path to an html template that will override default identify output. The template can contain angular bindings, directives, etc."
+                        }
+                    },
+                    "required": ["template"],
+                    "additionalProperties": false
+                }
+            },
+            "required": ["id", "layerType", "url"],
+            "additionalProperties": false
+        },
         "wfsLayerNode": {
             "type": "object",
             "properties": {
@@ -1551,6 +1651,9 @@
                 },
                 {
                     "$ref": "#/definitions/fileLayerNode"
+                },
+                {
+                    "$ref": "#/definitions/wcsLayerNode"
                 },
                 {
                     "$ref": "#/definitions/wfsLayerNode"

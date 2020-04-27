@@ -7,6 +7,7 @@ const GEO = {
             ESRI_IMAGE: 'esriImage',
             ESRI_TILE: 'esriTile',
             ESRI_RASTER: 'esriRaster', // Note this type can only exist as a child of a dynamic layer. Can be used to check types via child proxy objects.
+            OGC_WCS: 'ogcWcs',
             OGC_WMS: 'ogcWms',
             OGC_WFS: 'ogcWfs'
         },

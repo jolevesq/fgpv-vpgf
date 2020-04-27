@@ -1,0 +1,8 @@
+<form>
+    <md-input-container ng-if="::(self.block.proxyWrapper.layerConfig.coverages.length > 1)">
+        <label>{{ self.uiControl.label | translate }}</label>
+        <md-select ng-model="self.block.proxyWrapper.layerConfig.currentCoverage" ng-change="self.uiControl.action()">
+            <md-option ng-value="coverage" ng-repeat="coverage in self.block.proxyWrapper.layerConfig.coverages">{{ coverage }}</md-option>
+        </md-select>
+    </md-input-container>
+</form>

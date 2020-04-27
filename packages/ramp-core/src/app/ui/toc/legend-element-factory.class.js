@@ -508,6 +508,24 @@ function LegendElementFactory(
         }
     }
 
+    class CoveragesControl extends BaseControl {
+        constructor(...args) {
+            super(...args);
+
+            this._controlName = 'coverages';
+        }
+
+        get label() {
+            return 'toc.label.query';
+        }
+
+        action() {
+            const layerRecord = layerRegistry.getLayerRecord(this.block.layerRecordId);
+            layerRecord._layer.currentCoverage = layerRecord.config.coverages.findIndex((item) => { return item === layerRecord.config.currentCoverage; }) - 1;
+            layerRecord._layer.redraw();
+        }
+    }
+
     class IntervalControl extends BaseControl {
         constructor(...args) {
             super(...args);
@@ -539,7 +557,7 @@ function LegendElementFactory(
 
         action(value) {
             const layerRecord = layerRegistry.getLayerRecord(this.block.layerRecordId);
-            layerRecord.config.refreshInterval = value;
+            self.block.proxyWrapper.layerConfiglayerRecord.config.refreshInterval = value;
         }
     }
 
@@ -831,7 +849,8 @@ function LegendElementFactory(
             reorder: ReorderControl,
             symbology: SymbologyControl,
             styles: StylesControl,
-            interval: IntervalControl
+            interval: IntervalControl,
+            coverages: CoveragesControl
         }
     };
 

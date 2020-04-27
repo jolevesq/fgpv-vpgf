@@ -190,6 +190,7 @@
                 <option value="config/config-sample-90.json">90. Layer with custom field alias + outfields on feature layers</option>
                 <option value="config/config-sample-91.json">91. Custom Symbology Stacks</option>
                 <option value="config/config-sample-92.json">92. Third Basemap Schema using WKT</option>
+                <option value="config/config-sample-93.json">93. WCS layer</option>
             </select>
         </div>
 

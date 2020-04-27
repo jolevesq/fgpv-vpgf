@@ -86,7 +86,9 @@ function Controller(common, Geo, LegendBlock, tocService, layerRegistry) {
 
     self.checkAvailableControls = checkAvailableControls;
     self.checkDisabledControls = checkDisabledControls;
+    self.checkWCS = checkWCS;
     self.checkWMS = checkWMS;
+    self.checkCoveragesLength = checkCoveragesLength;
     self.checkStylesLength = checkStylesLength;
 
     self.includeRefreshInterval = () => {
@@ -112,6 +114,24 @@ function Controller(common, Geo, LegendBlock, tocService, layerRegistry) {
      */
     function checkDisabledControls(names) {
         return common.intersect(self.block.disabledControls, names.split('|')).length > 0;
+    }
+
+    /**
+     * @function checkWCS
+     * @private
+     * @return {Boolean} true if the block is a WCS layer
+     */
+    function checkWCS() {
+        return self.block.layerType === Geo.Layer.Types.OGC_WCS;
+    }
+
+    /**
+     * @function checkCoveragesLength
+     * @private
+     * @return {Boolean} true if some sublayer has more than 1 coverage (only for WCS)
+     */
+    function checkCoveragesLength() {
+        return (self.block.proxyWrapper.layerConfig.coverages && self.block.proxyWrapper.layerConfig.coverages.length > 1);
     }
 
     /**
