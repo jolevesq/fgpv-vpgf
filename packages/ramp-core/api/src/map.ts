@@ -1,7 +1,7 @@
 import { Observable, Subject, fromEvent, merge } from 'rxjs';
 import { map } from 'rxjs/internal/operators/map';
 import { distinctUntilChanged } from 'rxjs/internal/operators/distinctUntilChanged';
-import $ from 'jquery';
+const $  = require('jquery');
 import { MouseEvent, esriMouseEvent, MapClickEvent } from 'api/events';
 import * as geo from 'api/geometry';
 import { seeder } from 'app/app-seed';
